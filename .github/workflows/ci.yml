@@ -77,11 +77,15 @@ jobs:
       - name: Test installed wheel outside the source tree
         run: |
           python -m venv /tmp/medaugmentx-wheel
-          /tmp/medaugmentx-wheel/bin/python -m pip install dist/*.whl pytest
-          cp -R tests /tmp/medaugmentx-tests
-          cp pyproject.toml /tmp/pyproject.toml
-          cd /tmp
-          /tmp/medaugmentx-wheel/bin/python -m pytest medaugmentx-tests -q
+          wheel=$(ls dist/*.whl)
+          /tmp/medaugmentx-wheel/bin/python -m pip install "${wheel}[test]"
+          # Keep the copied tree named "tests": pytest derives module names from
+          # the rootdir-relative path, and "medaugmentx-tests" is not importable.
+          mkdir -p /tmp/medaugmentx-wheel-check
+          cp -R tests /tmp/medaugmentx-wheel-check/tests
+          cp pyproject.toml /tmp/medaugmentx-wheel-check/pyproject.toml
+          cd /tmp/medaugmentx-wheel-check
+          /tmp/medaugmentx-wheel/bin/python -m pytest tests -q
       - name: Build searchable documentation
         run: |
           python -m pip install ".[docs]"

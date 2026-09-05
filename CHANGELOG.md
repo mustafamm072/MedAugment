@@ -1,10 +1,16 @@
 # Changelog
 
+All notable changes to MedAugmentX will be documented in this file.
 
-## Unreleased
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/).
+
+## [Unreleased]
 
 ### Fixed
 
+- Keep the copied test tree named `tests` in the isolated-wheel CI job; `medaugmentx-tests` is not an importable package name, so pytest could not collect it.
+- Write DICOM test fixtures with explicit little-endian encoding on both pydicom 2.x and 3.x. pydicom 2.x (the newest release available on Python 3.9) does not infer the dataset encoding from `file_meta`.
 - Preserve integer seeds in every built-in transform configuration, including standalone JSON/YAML round-trips.
 - Align resize landmarks/boxes with the sampled voxel-centre grid; move targets through DBT slab shifts and compression.
 - Isolate each Guard attempt from input mutation, deep-copy nested metadata, and detect removed masks. Clarify that retries counts total attempts.
@@ -14,23 +20,22 @@
 
 ### Added
 
+- Release checklist in `CONTRIBUTING.md` naming every file that records the version number.
 - README before/after gallery for MRI, CT, X-ray, and DBT, generated from synthetic phantoms with a reproducible script and parameter manifest.
-
 - Searchable Sphinx documentation from the existing Markdown guides, with CI preview artifacts.
 - Research reproducibility guide, software citation metadata, and a runnable synthetic experiment record.
 - Distribution build/metadata checks and tests against an installed wheel outside the checkout.
 - CI execution of adoption examples and 2D/3D benchmark smoke checks; repaired benchmark shape handling and stale Guard registration handling.
 
+### Documentation
+
+- Restore the changelog preamble to the top of the file and merge the two `Unreleased` headings into one.
+- Record `version`, `date-released`, and the archive DOI in `CITATION.cff` so the generated citation matches the README badge.
+- Correct the clone URL in `CONTRIBUTING.md`.
+
 ### Compatibility notes
 
 Saved policies now include leaf seeds. Loading a saved integer-seeded standalone transform starts its sequence again; it does not restore current RNG state. Resize target coordinates change to match existing image interpolation. Guard now copies inputs for isolation, increasing peak memory. DICOM series with irregular or duplicate physical slice positions now fail explicitly. Text policies above 1,000,000 characters require reduction or trusted in-process construction. No release or public deployment is performed by these changes.
-
-All notable changes to MedAugmentX will be documented in this file.
-
-The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/).
-
-## [Unreleased]
 
 ## [0.9.0] — 2026-07-23
 

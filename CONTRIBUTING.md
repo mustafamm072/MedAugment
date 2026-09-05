@@ -6,8 +6,8 @@ setup, the project conventions, and what we look for in pull requests.
 ## Development setup
 
 ```bash
-git clone https://github.com/medaugmentx/medaugmentx.git
-cd medaugmentx
+git clone https://github.com/mustafamm072/MedAugmentX.git
+cd MedAugmentX
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 pytest
@@ -183,3 +183,22 @@ python -m twine check dist/*
 
 CI also installs the wheel in a separate environment and runs the copied tests
 outside the source checkout, so editable imports cannot hide packaging errors.
+
+## Releasing
+
+The version number is recorded in four places and they must agree:
+
+| File | Field |
+| --- | --- |
+| `pyproject.toml` | `project.version` |
+| `medaugmentx/__init__.py` | `__version__` |
+| `CITATION.cff` | `version`, `date-released` |
+| `CHANGELOG.md` | the new `## [x.y.z] — YYYY-MM-DD` heading |
+
+Move the `## [Unreleased]` entries under the new heading, leave `[Unreleased]`
+empty at the top, and update the README's "current version" mention and the
+Phase-3 status row if the release changes them.
+
+Note that CI's oldest matrix entry (Python 3.9) resolves `pydicom` 2.x, the
+last series that supports it. Test fixtures and I/O code must work on both
+`pydicom` 2.x and 3.x.

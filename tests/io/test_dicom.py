@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import pytest
 
@@ -16,7 +18,12 @@ def _write_dicom_slice(path, pixels: np.ndarray, *, series_uid, position: float,
     file_meta.MediaStorageSOPClassUID = "1.2.840.10008.5.1.4.1.1.2"
     file_meta.MediaStorageSOPInstanceUID = generate_uid()
     file_meta.TransferSyntaxUID = ExplicitVRLittleEndian
-    ds = FileDataset(str(path), {}, file_meta=file_meta, preamble=b"\0" * 128)
+    # Match the dataset encoding to TransferSyntaxUID on pydicom 2.x as well
+    # as 3.x; older writers do not infer it from file_meta on initial save.
+    ds = FileDataset(
+        str(path), {}, file_meta=file_meta, preamble=b"\0" * 128,
+        is_implicit_VR=False, is_little_endian=True,
+    )
     ds.PatientID = "test"
     ds.Modality = modality
     ds.Manufacturer = "TestVendor"
@@ -131,3 +138,21 @@ def test_inconsistent_or_color_dicom_rejected(tmp_path, tag, value):
             ds.save_as(path)
     with pytest.raises(ValueError, match="inconsistent|monochrome"):
         load_dicom_series(str(tmp_path))
+
+
+def test_fixture_encoding_matches_transfer_syntax_on_rewrite(tmp_path):
+    path = tmp_path / "slice.dcm"
+    pixels = np.arange(16, dtype=np.uint16).reshape(4, 4)
+    _write_dicom_slice(path, pixels, series_uid=generate_uid(), position=0)
+    # pydicom warns (rather than raises) when the declared transfer syntax and
+    # the on-disk encoding disagree, so promote that warning to a failure here.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        ds = pydicom.dcmread(path)
+        assert ds.SOPClassUID == ds.file_meta.MediaStorageSOPClassUID
+        assert ds.is_implicit_VR is False
+        assert ds.is_little_endian is True
+        ds.InstanceNumber = 2
+        ds.save_as(path)
+        restored = pydicom.dcmread(path)
+        np.testing.assert_array_equal(restored.pixel_array, pixels)

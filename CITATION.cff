@@ -2,10 +2,17 @@ cff-version: 1.2.0
 message: "If you use MedAugmentX in research, cite this software and record the version or commit used."
 type: software
 title: MedAugmentX
+abstract: "Clinically-aware medical image augmentation for AI training (MRI, CT, X-ray, tomosynthesis)."
 authors:
   - name: MedAugmentX Contributors
+version: 0.9.0
+date-released: "2026-07-23"
 repository-code: "https://github.com/mustafamm072/MedAugmentX"
 url: "https://github.com/mustafamm072/MedAugmentX"
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.20191189
+    description: "Archived record for MedAugmentX. Confirm it matches the version you used before citing it for a specific release."
 license: MIT
 keywords:
   - medical imaging
