@@ -88,7 +88,7 @@ training stacks while keeping the default install lightweight.
 | 3.11 | Plausibility validation + safe-augmentation guard (`VolumeValidator`, `Guard`) | `medaugmentx/validation.py` | ✅ `0.8.0` |
 | 3.12 | Keypoint & bounding-box targets warped through all spatial transforms | `medaugmentx/core/geometry.py`, `core/volume.py` | ✅ `0.9.0` |
 | 3.13 | Sphinx documentation site | `docs/sphinx/` | ✅ `0.10.0` — CI preview artifact; public hosting pending |
-| 3.14 | Jupyter tutorials (MRI, CT, DBT) | `notebooks/` | Planned |
+| 3.14 | Jupyter tutorials (MRI, CT, DBT) | `notebooks/`, `medaugmentx/phantoms.py` | ✅ unreleased |
 | 3.15 | v1.0 release + GitHub Actions CD pipeline | `.github/` | Planned |
 
 ### Acceptance criteria (Phase 3 / v1.0)

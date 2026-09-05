@@ -404,6 +404,26 @@ Install optional I/O support with `pip install "medaugmentx[io]"`.
 
 ---
 
+## Synthetic Phantoms
+
+```python
+from medaugmentx.phantoms import ct_phantom, dbt_phantom, mri_phantom, xray_phantom
+```
+
+| API | Returns | Description |
+| --- | --- | --- |
+| `mri_phantom(size=256)` | 2D `MedVolume` | Axial brain-like slice, arbitrary units in `[0, 1]` |
+| `ct_phantom(size=256)` | 2D `MedVolume` | Axial abdomen-like slice in approximate Hounsfield units |
+| `xray_phantom(size=256)` | 2D `MedVolume` | Chest-radiograph-like projection, arbitrary units |
+| `dbt_phantom(seed=2026)` | 3D `MedVolume` | `(64, 128, 256)` tomosynthesis volume, spacing `(1.0, 0.5, 0.25)` |
+
+Generated from analytic shapes and a fixed seed — no patient data, downloads,
+or network access, and identical across machines. They are illustrations, not
+validated models of anatomy or scanner physics; do not draw clinical
+conclusions from them. Requires no extra beyond the core install.
+
+---
+
 ## Optional Extras
 
 | Extra | Installs |
@@ -412,6 +432,7 @@ Install optional I/O support with `pip install "medaugmentx[io]"`.
 | `nifti` | `nibabel` |
 | `io` | `pydicom`, `nibabel` |
 | `yaml` | `pyyaml` |
+| `notebooks` | `matplotlib`, `nbformat`, `nbclient`, `ipykernel` |
 | `torch` | `torch` |
 | `monai` | `monai` |
 | `torchio` | `torchio` |

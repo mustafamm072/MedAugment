@@ -36,7 +36,7 @@ jobs:
       - name: Lint (ruff)
         run: |
           pip install ruff
-          ruff check medaugmentx tests
+          ruff check medaugmentx tests examples notebooks
 
       - name: Type check (mypy)
         run: |
@@ -53,6 +53,12 @@ jobs:
           python examples/reproducible_experiment.py
           python benchmarks/benchmark.py --shape 8 16 16 --repeats 1
           python benchmarks/benchmark.py --shape 16 16 --repeats 1
+
+      - name: Run tutorial notebooks
+        if: matrix.python-version == '3.12'
+        run: |
+          pip install -e ".[notebooks]"
+          python notebooks/run_notebooks.py
 
       - name: Upload coverage
         if: matrix.python-version == '3.12'

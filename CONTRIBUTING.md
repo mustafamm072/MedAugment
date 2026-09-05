@@ -31,9 +31,11 @@ medaugmentx/                 # Library source
   interop/                  # Framework adapters for dataset samples
   presets.py                # mri_pipeline, ct_pipeline, dxr_pipeline, dbt_pipeline
   serialization.py          # to_json / from_json / to_yaml / from_yaml / REGISTRY
+  phantoms.py               # Synthetic MRI/CT/X-ray/DBT volumes for docs and tests
 tests/                      # Mirrors the source layout
 docs/                       # Architecture, milestones, API reference, API examples
 examples/                   # Runnable scripts
+notebooks/                  # Modality tutorials (committed without outputs)
 ```
 
 ## Coding conventions
@@ -133,6 +135,21 @@ pytest --cov=medaugmentx --cov-report=term-missing
 We aim for ≥ 90% coverage on `medaugmentx/core` and `medaugmentx/transforms`.
 I/O tests are marked `@pytest.mark.io` and skipped automatically when the
 optional dependency (`pydicom`, `nibabel`) is not installed.
+
+## Notebooks
+
+Tutorials live in `notebooks/` and are committed **without outputs** — clear
+them before committing (*Kernel → Restart Kernel and Clear All Outputs*).
+`tests/test_phantoms.py` fails if outputs or execution counts sneak in. CI
+executes every notebook on Python 3.12; run them yourself with:
+
+```bash
+pip install -e ".[notebooks]"
+python notebooks/run_notebooks.py
+```
+
+Notebooks must build their data from `medaugmentx.phantoms` — never a download
+or a local dataset path, so they run anywhere and never touch patient data.
 
 ## Commit messages
 

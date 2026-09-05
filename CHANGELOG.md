@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Jupyter tutorials for MRI, CT, and tomosynthesis in `notebooks/`, covering the
+  modality-specific reasoning behind each transform plus mask alignment,
+  seeding, guarding, and policy serialisation (roadmap 3.14).
+- `medaugmentx.phantoms` — synthetic MRI, CT, X-ray, and DBT volumes generated
+  from analytic shapes with no downloads or patient data. Promoted out of the
+  README gallery script so tutorials, examples, and tests share one definition.
+- `notebooks` optional extra (`matplotlib`, `nbformat`, `nbclient`, `ipykernel`)
+  and `notebooks/run_notebooks.py`, which CI runs on every push so the tutorials
+  cannot rot.
+
+### Changed
+
+- `examples/generate_readme_gallery.py` imports its phantoms from
+  `medaugmentx.phantoms` instead of defining them inline. Gallery output is
+  byte-identical.
+
 ## [0.10.0] — 2026-09-05
 
 ### Fixed

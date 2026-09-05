@@ -10,6 +10,7 @@ root_doc = "docs/sphinx/index"
 include_patterns = [
     "README.md", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md",
     "docs/*.md", "docs/sphinx/index.rst", "examples/README.md", "benchmarks/README.md",
+    "notebooks/README.md",
 ]
 myst_heading_anchors = 4
 html_theme = "alabaster"

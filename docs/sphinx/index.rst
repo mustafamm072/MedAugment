@@ -12,6 +12,7 @@ Simple medical image augmentation with NumPy and SciPy.
    ../API_REFERENCE
    ../RESEARCH_GUIDE
    ../COMMERCIAL_ADOPTION
+   ../../notebooks/README
    ../../examples/README
    ../../benchmarks/README
    ../ARCHITECTURE

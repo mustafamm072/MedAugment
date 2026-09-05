@@ -5,6 +5,7 @@ second.
 
 | Document | Start here when you need |
 | --- | --- |
+| [Tutorials](../notebooks/README.md) | Guided MRI, CT, and tomosynthesis walkthroughs as runnable notebooks |
 | [Research guide](RESEARCH_GUIDE.md) | Replay, worker seeds, evaluation reporting, and software citation |
 | [Commercial adoption](COMMERCIAL_ADOPTION.md) | Production-readiness checklist, intended use, validation, audit trail, privacy, and dependency guidance |
 | [API examples](API_EXAMPLES.md) | Practical snippets for common workflows |

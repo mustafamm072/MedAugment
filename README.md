@@ -67,6 +67,21 @@ entire gallery without downloading data, run
 The [gallery manifest](docs/assets/modality-gallery.json) records every
 transform configuration, display range, and dependency version.
 
+The inputs come from [`medaugmentx.phantoms`](medaugmentx/phantoms.py), which
+generates brain, abdomen, chest, and tomosynthesis volumes from analytic shapes
+— so you can try any transform without supplying data of your own:
+
+```python
+from medaugmentx.phantoms import ct_phantom
+
+volume = ct_phantom()          # 2D axial slice in Hounsfield units
+```
+
+For guided walkthroughs of each modality, see the
+[tutorial notebooks](notebooks/README.md): why MR noise is Rician, why CT windowing is
+both a display step and an augmentation, and why tomosynthesis needs
+anisotropy-aware transforms.
+
 ---
 
 ## Commercial Readiness

@@ -16,9 +16,8 @@ from importlib.metadata import version
 from pathlib import Path
 
 import numpy as np
-from scipy.ndimage import gaussian_filter
 
-from medaugmentx import MedVolume
+from medaugmentx.phantoms import ct_phantom, dbt_phantom, mri_phantom, xray_phantom
 from medaugmentx.transforms import (
     BeamHardening,
     BiasField,
@@ -29,74 +28,6 @@ from medaugmentx.transforms import (
     RicianNoise,
     ScatterSimulation,
 )
-
-
-def coordinates(size: int = 256) -> tuple[np.ndarray, np.ndarray]:
-    return tuple(np.meshgrid(np.linspace(-1, 1, size), np.linspace(-1, 1, size), indexing="ij"))
-
-
-def ellipse(y, x, cy, cx, ry, rx):
-    return ((y - cy) / ry) ** 2 + ((x - cx) / rx) ** 2 < 1
-
-
-def mri_phantom() -> MedVolume:
-    y, x = coordinates()
-    head = ellipse(y, x, 0, 0, 0.90, 0.73)
-    brain = ellipse(y, x, 0, 0, 0.80, 0.65)
-    inner = ellipse(y, x, 0, 0, 0.69, 0.54)
-    image = 0.12 * head + 0.43 * brain + 0.18 * inner
-    folds = (np.sin(35 * x + 4 * np.cos(13 * y)) * np.sin(28 * y - 3 * x))
-    image += 0.08 * folds * brain
-    image[ellipse(y, x, -0.02, -0.12, 0.24, 0.07)] = 0.12
-    image[ellipse(y, x, -0.02, 0.12, 0.24, 0.07)] = 0.12
-    image[(np.abs(x) < 0.012) & brain] *= 0.65
-    return MedVolume(gaussian_filter(image, 0.7).astype(np.float32), metadata={"modality": "MR"})
-
-
-def ct_phantom() -> MedVolume:
-    y, x = coordinates()
-    body = ellipse(y, x, 0, 0, 0.77, 0.91)
-    image = np.full(y.shape, -1000.0)
-    image[body] = -100.0
-    image[ellipse(y, x, 0, 0, 0.67, 0.80)] = 45.0
-    image[ellipse(y, x, -0.14, -0.35, 0.35, 0.29)] = 85.0
-    image[ellipse(y, x, -0.07, 0.42, 0.25, 0.19)] = 65.0
-    for cx in (-0.29, 0.29):
-        image[ellipse(y, x, 0.22, cx, 0.16, 0.11)] = 110.0
-    image[ellipse(y, x, 0.40, 0, 0.15, 0.15)] = 800.0
-    image[ellipse(y, x, 0.40, 0, 0.09, 0.09)] = 150.0
-    image[ellipse(y, x, 0.12, 0.02, 0.07, 0.07)] = 170.0
-    return MedVolume(gaussian_filter(image, 0.65).astype(np.float32), metadata={"modality": "CT"})
-
-
-def xray_phantom() -> MedVolume:
-    y, x = coordinates()
-    body = ellipse(y, x, 0, 0, 0.94, 0.79)
-    image = 0.05 + 0.42 * body.astype(float)
-    lungs = ellipse(y, x, -0.08, -0.31, 0.68, 0.25) | ellipse(y, x, -0.08, 0.31, 0.68, 0.25)
-    image[lungs] = 0.15
-    image += 0.20 * np.exp(-(x / 0.085) ** 2) * body
-    image += 0.18 * ellipse(y, x, 0.24, 0.10, 0.32, 0.27)
-    for height in np.linspace(-0.67, 0.52, 8):
-        arc = height + 0.38 * x**2
-        image += 0.14 * np.exp(-((y - arc) / 0.018) ** 2) * body
-    image += 0.035 * np.sin(21 * x + 9 * y) * lungs
-    return MedVolume(gaussian_filter(image, 0.7).astype(np.float32), metadata={"modality": "DX"})
-
-
-def dbt_phantom() -> MedVolume:
-    # A true 3D phantom. Gallery plane is (z, x) through the middle y index.
-    z, y, x = np.meshgrid(np.linspace(-1, 1, 64), np.linspace(-1, 1, 128),
-                          np.linspace(-1, 1, 256), indexing="ij")
-    tissue = (z / 0.80) ** 2 + (y / 1.15) ** 2 + ((x + 0.33) / 1.15) ** 2 < 1
-    image = tissue * (0.16 + 0.035 * np.sin(15 * x + 9 * z) * np.cos(8 * y))
-    rng = np.random.default_rng(2026)
-    for _ in range(24):
-        cz, cx = rng.uniform(-0.6, 0.6), rng.uniform(-0.9, 0.65)
-        rz, rx = rng.uniform(0.025, 0.09), rng.uniform(0.025, 0.13)
-        blob = np.exp(-((z - cz) / rz) ** 2 - ((x - cx) / rx) ** 2 - (y / 0.35) ** 2)
-        image += rng.uniform(0.2, 0.6) * blob * tissue
-    return MedVolume(image.astype(np.float32), spacing=(1.0, 0.5, 0.25), metadata={"modality": "DBT"})
 
 
 def main() -> None:
