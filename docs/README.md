@@ -33,16 +33,13 @@ source.
 
 ## Hosting
 
-`.github/workflows/docs.yml` publishes the site to GitHub Pages on every push
-to `main`. It only works once Pages is enabled for the repository:
+The site is published at **<https://mustafamm072.github.io/MedAugmentX/>**.
 
-> **Settings → Pages → Build and deployment → Source: GitHub Actions**
-
-Until then the workflow fails at the deploy step with a "Pages site not found"
-error; the build step still passes. Once enabled, the site is served at
-`https://mustafamm072.github.io/MedAugmentX/` and the deploy job prints the URL.
-Update the `Documentation` URL in `pyproject.toml` and the docs links in the
-README to point there once it is live.
+`.github/workflows/docs.yml` rebuilds and redeploys it on every push to `main`,
+and can be run manually from the Actions tab (*Docs → Run workflow*). The repo
+must keep Pages configured with **Settings → Pages → Source: GitHub Actions**;
+if that is ever switched off, the build step still passes and only the deploy
+step fails.
 
 CI (`ci.yml`) also builds the site on every push and pull request with `-W`, so
 warnings are caught on branches that never deploy, and uploads it as a preview

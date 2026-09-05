@@ -19,8 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   and `notebooks/run_notebooks.py`, which CI runs on every push so the tutorials
   cannot rot.
 - `.github/workflows/docs.yml` publishes the Sphinx site to GitHub Pages on
-  push to `main`, completing roadmap 3.13. Requires Pages to be enabled with
-  the "GitHub Actions" source before the deploy step can succeed.
+  push to `main`, completing roadmap 3.13. The site is live at
+  <https://mustafamm072.github.io/MedAugmentX/>, and the project's
+  `Documentation` URL and README badge now point at it.
 
 ### Fixed
 
