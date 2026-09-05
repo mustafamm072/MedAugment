@@ -110,6 +110,7 @@ class MetalStreak(Transform):
                 "num_sources": so[0] if so[0] == so[1] else list(so),
                 "falloff": self.falloff,
                 "p": self.p,
+                "seed": self._seed,
             },
         }
 

@@ -71,5 +71,6 @@ class AnisotropicElastic(Transform):
                 "sigma": list(self.sigma),
                 "order": self._inner.order,
                 "p": self.p,
+                "seed": self._seed,
             },
         }

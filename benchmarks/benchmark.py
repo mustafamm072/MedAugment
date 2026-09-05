@@ -1,7 +1,7 @@
 """Speed benchmark for MedAugmentX transforms.
 
 Times each registered leaf transform on a representative volume and prints a
-table sorted by mean wall-clock time. Use this to spot regressions and to
+table sorted by best wall-clock time. Use this to spot regressions and to
 check the Phase-3 acceptance target: every transform should complete in
 < 500 ms on CPU for a 512x512x80 DBT volume.
 
@@ -9,7 +9,7 @@ Usage::
 
     python benchmarks/benchmark.py                  # default 64x256x256 volume
     python benchmarks/benchmark.py --shape 80 512 512   # acceptance-target size
-    python benchmarks/benchmark.py --repeats 5 --no-3d-only-skip
+    python benchmarks/benchmark.py --repeats 5 --shape 256 256
 
 The benchmark uses only NumPy/SciPy — no optional dependencies required.
 """
@@ -17,24 +17,14 @@ from __future__ import annotations
 
 import argparse
 import time
-from typing import Any
 
 import numpy as np
 
 from medaugmentx import MedVolume
 from medaugmentx.serialization import REGISTRY
 
-# Constructor arguments for transforms that need them, keyed by class name.
-# Anything not listed is instantiated with its defaults.
-_CONSTRUCTOR_ARGS: dict[str, dict[str, Any]] = {
-    "AnatomicCrop": {"size": (32, 128, 128)},
-    "Resize": {"size": (40, 160, 160)},
-    "Pad": {"size": (96, 320, 320)},
-    "CenterCrop": {"size": (32, 128, 128)},
-}
-
 # Containers and transforms that need a reference / nested transforms are skipped.
-_SKIP = {"Compose", "OneOf", "SomeOf", "HistogramMatch"}
+_SKIP = {"Compose", "OneOf", "SomeOf", "Guard", "HistogramMatch"}
 
 # Transforms that require a 3D volume.
 _REQUIRE_3D = {
@@ -56,7 +46,10 @@ def _make_volume(shape: tuple[int, ...]) -> MedVolume:
 
 
 def _time_transform(name: str, cls: type, volume: MedVolume, repeats: int) -> float | None:
-    kwargs = dict(_CONSTRUCTOR_ARGS.get(name, {}))
+    kwargs = {"p": 1.0, "seed": 0}
+    shape_factors = {"AnatomicCrop": 0.5, "CenterCrop": 0.5, "Resize": 0.625, "Pad": 1.5}
+    if name in shape_factors:
+        kwargs["size"] = tuple(max(1, round(s * shape_factors[name])) for s in volume.shape)
     kwargs.setdefault("p", 1.0)
     kwargs.setdefault("seed", 0)
     try:
@@ -88,6 +81,10 @@ def main() -> None:
     parser.add_argument("--repeats", type=int, default=3, help="Timed runs per transform.")
     args = parser.parse_args()
 
+    if len(args.shape) not in (2, 3) or any(s <= 0 for s in args.shape):
+        parser.error("--shape requires two or three positive integers")
+    if args.repeats < 1:
+        parser.error("--repeats must be positive")
     shape = tuple(args.shape)
     volume = _make_volume(shape)
     is_3d = len(shape) == 3

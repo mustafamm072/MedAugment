@@ -102,5 +102,6 @@ class CoarseDropout(Transform):
                 "fill_value": self.fill_value,
                 "fill_mask": self.fill_mask,
                 "p": self.p,
+                "seed": self._seed,
             },
         }

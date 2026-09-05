@@ -87,7 +87,7 @@ training stacks while keeping the default install lightweight.
 | 3.10 | Pipeline inspection for experiment logs and augmentation policy review | `medaugmentx/inspection.py` | ✅ `0.7.0` |
 | 3.11 | Plausibility validation + safe-augmentation guard (`VolumeValidator`, `Guard`) | `medaugmentx/validation.py` | ✅ `0.8.0` |
 | 3.12 | Keypoint & bounding-box targets warped through all spatial transforms | `medaugmentx/core/geometry.py`, `core/volume.py` | ✅ `0.9.0` |
-| 3.13 | Sphinx documentation site | `docs/sphinx/` | Planned |
+| 3.13 | Sphinx documentation site | `docs/sphinx/` | Implemented locally; CI preview artifact, public hosting pending |
 | 3.14 | Jupyter tutorials (MRI, CT, DBT) | `notebooks/` | Planned |
 | 3.15 | v1.0 release + GitHub Actions CD pipeline | `.github/` | Planned |
 
@@ -119,3 +119,17 @@ milestones (`phase-1`, `phase-2`, `phase-3`).
 | `phase-3` | Roadmap milestone |
 
 Contributors: see [CONTRIBUTING.md](../CONTRIBUTING.md).
+
+## Current adoption priorities
+
+The current unreleased changes prioritize correctness and a small install:
+annotation alignment, saved seeds, isolated guard attempts, bounded config
+loading, DICOM spacing, searchable documentation, research guidance, and wheel
+verification. Existing GPU and vendor-specific goals remain future work;
+performance targets above are targets, not measured guarantees.
+
+Before a stable release: propagate NIfTI affines through crop/pad/resize and
+validate real TorchIO/MONAI tensor and patient-space affine behavior with optional integration environments, expand DICOM vendor
+fixtures, publish the documentation preview, and configure trusted publishing
+with the maintainer's PyPI project. Add measured benchmark comparisons before
+making speed or model-quality claims. GPU acceleration should remain optional.

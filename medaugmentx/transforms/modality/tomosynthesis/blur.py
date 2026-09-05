@@ -85,5 +85,6 @@ class LimitedAngleBlur(Transform):
                 "base_sigma": self.base_sigma,
                 "reference_arc_deg": self.reference_arc_deg,
                 "p": self.p,
+                "seed": self._seed,
             },
         }

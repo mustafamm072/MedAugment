@@ -18,8 +18,9 @@ python benchmarks/benchmark.py --shape 512 512 --repeats 5
 ## Interpreting the results
 
 - Times are **best-of-N** wall-clock per `__call__`, in milliseconds, on a
-  single CPU thread (whatever BLAS/SciPy threading is configured).
-- Container transforms (`Compose`, `OneOf`, `SomeOf`) and `HistogramMatch`
+  CPU using the current BLAS/SciPy threading configuration. Threads are not
+  pinned by this script.
+- Container transforms (`Compose`, `OneOf`, `SomeOf`, `Guard`) and `HistogramMatch`
   (which needs a reference array) are skipped.
 - 3-D-only transforms (`SlabShift`, `ReconStreak`, …) are skipped for 2-D
   shapes.
@@ -39,3 +40,9 @@ transforms run in well under 50 ms. The intrinsically expensive ones are
 3-D `MedianBlur` (a cubic-window rank filter) and large-sigma Gaussian
 operations (`ScatterSimulation`, `BiasField`); budget accordingly or run them
 at lower probability.
+
+Shape helpers derive output sizes from the input: crops use half each axis,
+resize uses 0.625 times each axis, and padding uses 1.5 times each axis (rounded,
+with at least one voxel). Record these settings and dependency versions when
+comparing benchmark runs. Small-patch timings do not establish the full-volume
+target or a speed advantage over other libraries.

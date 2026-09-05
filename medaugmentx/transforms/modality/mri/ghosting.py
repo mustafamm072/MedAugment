@@ -108,5 +108,6 @@ class GhostingArtifact(Transform):
                 "phase_encode_axis": self.phase_encode_axis,
                 "num_ghosts": self.num_ghosts,
                 "p": self.p,
+                "seed": self._seed,
             },
         }

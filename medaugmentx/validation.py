@@ -273,11 +273,10 @@ class VolumeValidator:
 
         if (
             self.preserve_mask_labels
-            and volume.mask is not None
             and reference.mask is not None
         ):
             before = set(np.unique(reference.mask).tolist())
-            after = set(np.unique(volume.mask).tolist())
+            after = set() if volume.mask is None else set(np.unique(volume.mask).tolist())
             lost = sorted(label for label in before - after if label != 0)
             if lost:
                 issues.append(
@@ -290,11 +289,10 @@ class VolumeValidator:
 
         if (
             self.max_foreground_loss is not None
-            and volume.mask is not None
             and reference.mask is not None
         ):
             before_fg = int(np.count_nonzero(reference.mask))
-            after_fg = int(np.count_nonzero(volume.mask))
+            after_fg = 0 if volume.mask is None else int(np.count_nonzero(volume.mask))
             if before_fg > 0:
                 loss = 1.0 - (after_fg / before_fg)
                 if loss > self.max_foreground_loss:
@@ -365,8 +363,8 @@ class Guard(Transform):
     - ``"warn"``   — emit a :class:`UserWarning` and return the output anyway.
     - ``"revert"`` — discard the output and return the original volume
       unchanged (never inject a bad sample into training).
-    - ``"retry"``  — re-run the wrapped transform with fresh randomness up to
-      ``retries`` times; if none pass, fall back to reverting.
+    - ``"retry"``  — run the wrapped transform with fresh randomness for up to
+      ``retries`` total attempts; if none pass, fall back to reverting.
 
     ``Guard`` is itself a :class:`~medaugmentx.core.base.Transform`, so it
     nests inside ``Compose``/``OneOf``/``SomeOf`` and serialises like any other
@@ -377,7 +375,8 @@ class Guard(Transform):
         validator: A :class:`VolumeValidator`, its ``to_dict()`` mapping, or
             ``None`` for the default validator.
         on_fail: One of ``"raise"``, ``"warn"``, ``"revert"``, ``"retry"``.
-        retries: Number of re-draws in ``"retry"`` mode (ignored otherwise).
+        retries: Maximum total attempts in ``"retry"`` mode, including the first
+            draw (ignored otherwise). Each attempt receives an isolated input copy.
         p: Probability of applying the wrapped transform at all.
         seed: Seed for the retry re-draw stream.
     """
@@ -433,7 +432,7 @@ class Guard(Transform):
             if attempt > 0:
                 # Fresh randomness for each retry, deterministic given the seed.
                 self._reseed_child()
-            candidate = self.transform(reference)
+            candidate = self.transform(reference.copy())
             report = self.validator.validate(candidate, reference)
             if report.ok:
                 return candidate
@@ -453,7 +452,7 @@ class Guard(Transform):
         # "revert" and exhausted "retry" both fall back to the untouched input.
         if self.on_fail == "retry":
             warnings.warn(
-                f"Guard exhausted {self.retries} retries; reverting to input.\n{report}",
+                f"Guard exhausted {self.retries} attempts; reverting to input.\n{report}",
                 UserWarning,
                 stacklevel=2,
             )

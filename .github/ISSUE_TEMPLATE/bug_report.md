@@ -8,6 +8,10 @@ labels: bug
 ## Description
 A clear description of what is going wrong.
 
+Use synthetic or de-identified examples only; remove patient identifiers and
+private paths from tracebacks and configurations. Report vulnerabilities
+privately as described in SECURITY.md.
+
 ## Reproduction
 Minimal Python snippet, including a stand-in `MedVolume` (shape, dtype,
 spacing) that triggers the issue.

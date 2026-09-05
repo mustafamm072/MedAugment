@@ -5,6 +5,7 @@ from typing import Any, Union
 
 import numpy as np
 
+from medaugmentx.core import geometry
 from medaugmentx.core.base import Transform
 from medaugmentx.core.utils import SeedLike
 from medaugmentx.core.volume import MedVolume
@@ -74,7 +75,10 @@ class SlabShift(Transform):
             if volume.mask is None
             else self._shift_array(volume.mask, shift, 0).astype(volume.mask.dtype, copy=False)
         )
-        return volume.replace(image=new_image, mask=new_mask)
+        return volume.warp(
+            geometry.translate_map(np.array([shift, 0.0, 0.0])),
+            image=new_image, mask=new_mask,
+        )
 
     def to_dict(self) -> dict[str, Any]:
         sr = self.shift_range
@@ -85,5 +89,6 @@ class SlabShift(Transform):
                 "max_shift": max_shift,
                 "cval": self.cval,
                 "p": self.p,
+                "seed": self._seed,
             },
         }

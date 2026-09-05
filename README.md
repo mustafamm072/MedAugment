@@ -37,6 +37,38 @@ for local clinical, regulatory, security, and dataset validation.
 
 ---
 
+## See the transforms
+
+Explore **MRI, CT, X-ray, and digital breast tomosynthesis** with actual
+MedAugmentX outputs. Each row compares a synthetic input with two independently
+applied transforms.
+
+![Before-and-after augmentation gallery: MRI bias field and Rician noise; CT beam hardening and metal streaks; X-ray scatter and grid artifacts; tomosynthesis depth blur and reconstruction streaks.](docs/assets/modality-gallery.png)
+
+**Synthetic illustrations, not patient scans.** Effects are emphasized to make
+the differences visible; these are not recommended training settings or proof
+of clinical realism. All panels in a row share the same grayscale limits. The
+DBT row shows a depth cross-section through a 3D volume.
+
+Try one of the examples:
+
+```python
+from medaugmentx.transforms import BiasField, MetalStreak, ScatterSimulation, LimitedAngleBlur
+
+mri_aug = BiasField(alpha=0.65, seed=7)(mri_volume)
+ct_aug = MetalStreak(intensity=0.16, num_streaks=9, seed=7)(ct_volume)
+xray_aug = ScatterSimulation(fraction=0.5, sigma=22, seed=7)(xray_volume)
+dbt_aug = LimitedAngleBlur(arc_degrees=15, base_sigma=1.8, seed=7)(dbt_volume)
+```
+
+Here, each input is a `MedVolume`; DBT requires a 3D image. To reproduce the
+entire gallery without downloading data, run
+[`examples/generate_readme_gallery.py`](examples/generate_readme_gallery.py).
+The [gallery manifest](docs/assets/modality-gallery.json) records every
+transform configuration, display range, and dependency version.
+
+---
+
 ## Commercial Readiness
 
 MedAugmentX is designed to be easy to evaluate inside serious medical AI
@@ -93,8 +125,11 @@ print(medaugmentx.__version__)   # 0.9.0
 The fastest way to get started is a pre-built modality preset:
 
 ```python
-from medaugmentx.presets import mri_pipeline, ct_pipeline, dxr_pipeline, dbt_pipeline
+import numpy as np
+from medaugmentx import MedVolume
+from medaugmentx.presets import mri_pipeline
 
+vol = MedVolume(np.random.default_rng(0).random((8, 32, 32)).astype(np.float32))
 pipeline = mri_pipeline(seed=42)
 augmented = pipeline(vol)          # MedVolume in, MedVolume out
 ```
@@ -224,8 +259,8 @@ objects with `path`, `name`, `params`, and `depth`.
 ## Detection & landmark targets
 
 `MedVolume` can carry **keypoints** (landmark coordinates) and **bounding
-boxes** alongside the image and mask. Every spatial transform warps them in
-lockstep with the pixels, so detection and landmark annotations stay aligned
+boxes** alongside the image and mask. Every spatial transform maps them alongside
+the pixels, so detection and landmark annotations stay aligned
 through the whole pipeline — no separate bookkeeping.
 
 ```python
@@ -253,8 +288,9 @@ the same order used to index `image`, and boxes are `[min…, max…]`. Boxes ar
 transformed via their corners and re-bounded, so they remain valid under
 rotation. Transforms map targets faithfully and never drop them; after a crop,
 `out.remove_out_of_bounds_targets()` prunes off-frame keypoints and clips or
-drops boxes, keeping labels aligned. Intensity and artifact transforms leave
-targets untouched. See
+drops boxes, keeping labels aligned. DBT `SlabShift` and `CompressionVariation` also move targets. Intensity and
+non-geometric artifact transforms leave targets untouched. Non-linear box
+mapping uses corners and only approximates the warped extent. See
 [`examples/keypoints_bboxes.py`](examples/keypoints_bboxes.py).
 
 ---
@@ -465,16 +501,21 @@ See [API examples](docs/API_EXAMPLES.md) and the [API reference](docs/API_REFERE
 
 ## Reproducibility
 
-Every transform is seedable. `Compose(..., seed=42)` produces bit-identical
-output across runs and across machines (within a NumPy version):
+Every transform is seedable. Fresh, equivalent pipelines reproduce the same
+sequence of outputs in the same software environment:
 
 ```python
 a = Compose([...], seed=42)(vol)
 b = Compose([...], seed=42)(vol)
-assert np.array_equal(a.image, b.image)  # always passes
+assert np.array_equal(a.image, b.image)
 ```
 
 ---
+
+Repeated calls advance the random state. JSON/YAML preserves integer constructor
+seeds, not an in-progress RNG checkpoint. Cross-platform bitwise equality is not
+guaranteed. See the [Research guide](docs/RESEARCH_GUIDE.md) for worker seeding,
+experiment records, evaluation reporting, and citation.
 
 ## Project status & roadmap
 

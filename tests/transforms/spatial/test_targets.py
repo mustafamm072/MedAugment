@@ -103,8 +103,8 @@ class TestResize:
     def test_resize_scales_coords(self):
         v = _volume_with_point((10, 20), (3, 5))
         out = Resize(size=(20, 40)).apply(v)  # factor (2, 2)
-        np.testing.assert_allclose(out.keypoints[0], [6.0, 10.0])
-        np.testing.assert_allclose(out.bboxes[0], [6.0, 10.0, 8.0, 12.0])
+        np.testing.assert_allclose(out.keypoints[0], [3 * 19 / 9, 5 * 39 / 19])
+        np.testing.assert_allclose(out.bboxes[0], [3 * 19 / 9, 5 * 39 / 19, 4 * 19 / 9, 6 * 39 / 19])
 
     def test_resize_same_size_is_noop(self):
         v = _volume_with_point((8, 8), (2, 2))
@@ -152,3 +152,20 @@ class TestCompose:
         # flip x: (3, 14); pad before (2, 4): (5, 18)
         np.testing.assert_allclose(out.keypoints[0], [5.0, 18.0])
         assert out.keypoint_labels.tolist() == [42]
+
+
+def test_resize_endpoint_landmark_tracks_image():
+    v = _volume_with_point((3, 3), (2, 2))
+    out = Resize((9, 9))(v)
+    np.testing.assert_array_equal(out.keypoints[0], _peak(out.image))
+
+
+def test_dbt_geometry_tracks_landmarks_and_boxes():
+    from medaugmentx.transforms import CompressionVariation, SlabShift
+
+    v = _volume_with_point((9, 21, 21), (3, 6, 14))
+    for transform in (SlabShift(max_shift=(2, 2)), CompressionVariation(scale=1.5)):
+        out = transform(v)
+        np.testing.assert_allclose(out.keypoints[0], _peak(out.image), atol=0.5)
+        assert not np.array_equal(out.bboxes, v.bboxes)
+        np.testing.assert_array_equal(out.keypoint_labels, v.keypoint_labels)

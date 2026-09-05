@@ -6,6 +6,7 @@ from typing import Any, Union
 import numpy as np
 from scipy.ndimage import affine_transform
 
+from medaugmentx.core import geometry
 from medaugmentx.core.base import Transform
 from medaugmentx.core.utils import SeedLike, as_float32, axis_label_to_index
 from medaugmentx.core.volume import MedVolume
@@ -97,7 +98,13 @@ class CompressionVariation(Transform):
             m = self._scale_axis_array(volume.mask.astype(np.float64), ax, s, 0)
             new_mask = np.rint(m).astype(volume.mask.dtype, copy=False)
 
-        return volume.replace(image=new_image.astype(np.float32, copy=False), mask=new_mask)
+        forward = np.eye(volume.ndim)
+        forward[ax, ax] = s
+        centre = (np.asarray(volume.shape, dtype=np.float64) - 1.0) / 2.0
+        return volume.warp(
+            geometry.affine_map(forward, centre, np.zeros(volume.ndim)),
+            image=new_image.astype(np.float32, copy=False), mask=new_mask,
+        )
 
     def to_dict(self) -> dict[str, Any]:
         sr = self.scale_range
@@ -108,5 +115,6 @@ class CompressionVariation(Transform):
                 "axis": self.axis,
                 "order": self.order,
                 "p": self.p,
+                "seed": self._seed,
             },
         }

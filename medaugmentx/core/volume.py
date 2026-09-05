@@ -1,6 +1,7 @@
 """The MedVolume container — image + optional mask + spacing + metadata."""
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass, field, replace
 from typing import Any
 
@@ -288,7 +289,7 @@ class MedVolume:
             bboxes=None if self.bboxes is None else self.bboxes.copy(),
             bbox_labels=None if self.bbox_labels is None else self.bbox_labels.copy(),
             spacing=tuple(self.spacing),
-            metadata=dict(self.metadata),
+            metadata=deepcopy(self.metadata),
         )
 
     def __repr__(self) -> str:

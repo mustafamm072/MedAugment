@@ -156,3 +156,18 @@ augmented = pipeline(volume)
 
 Keep `pipeline_config` with training metadata so any model run can be
 reconstructed later.
+
+
+## Remaining geometry limitations before a stable release
+
+Array-index target alignment does not establish patient-space registration.
+NIfTI source affines are retained in metadata; crop, pad, and resize operations
+do not yet propagate their complete grid changes into that affine. Exporting
+such results with `save_nifti` can therefore retain stale patient-space geometry.
+Use an explicitly validated export/grid conversion for those workflows.
+
+The TorchIO adapter's current tests use lightweight stand-ins. Real TorchIO
+spatial-axis conventions and affine updates need dedicated integration coverage
+before claiming patient-space compatibility. This remains a v1.0 release
+blocker alongside vendor-specific DICOM coverage; the generic dictionary
+adapter's spacing update does not resolve those broader contracts.

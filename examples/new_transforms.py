@@ -49,7 +49,7 @@ def main() -> None:
         CLAHEContrast(clip_limit=(1.5, 3.0)),
         HistogramMatch(reference=reference, blend=(0.5, 1.0)),
     ]:
-        out = t.__class__(**t.to_dict()["params"], seed=0)(vol)
+        out = t.__class__(**{**t.to_dict()["params"], "seed": 0})(vol)
         print(f"  {t.__class__.__name__:18s} shape={out.image.shape} dtype={out.image.dtype}")
 
     print("\n--- Shape normalisation (resize -> pad/crop to a fixed batch shape) ---")
@@ -69,7 +69,7 @@ def main() -> None:
         CompressionVariation(scale=(0.85, 1.15)),  # spatial: mask warps too
         ReconStreak(amplitude=(0.1, 0.2)),
     ]:
-        out = t.__class__(**t.to_dict()["params"], seed=0)(vol)
+        out = t.__class__(**{**t.to_dict()["params"], "seed": 0})(vol)
         changed = not np.allclose(out.image, vol.image)
         labels_ok = set(np.unique(out.mask).tolist()) <= {0, 1}
         print(f"  {t.__class__.__name__:20s} changed={changed} mask_labels_valid={labels_ok}")

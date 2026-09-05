@@ -171,3 +171,15 @@ only the minimum reproduction needed for maintainers to investigate safely.
 
 Be kind, be specific, assume good faith. We follow the
 [Contributor Covenant v2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).
+
+## Documentation and package checks
+
+```bash
+pip install ".[docs]" build twine
+python -m sphinx -W --keep-going -b html -c docs/sphinx . /tmp/medaugmentx-docs
+python -m build
+python -m twine check dist/*
+```
+
+CI also installs the wheel in a separate environment and runs the copied tests
+outside the source checkout, so editable imports cannot hide packaging errors.

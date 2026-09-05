@@ -75,5 +75,6 @@ class GammaCorrection(Transform):
                 "gamma": gamma,
                 "invert": self.invert,
                 "p": self.p,
+                "seed": self._seed,
             },
         }

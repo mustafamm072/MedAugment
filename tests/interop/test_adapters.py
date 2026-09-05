@@ -199,3 +199,21 @@ def test_torchio_transform_falls_back_to_generic_array_samples():
     out = adapter(image)
 
     np.testing.assert_array_equal(out, np.flip(image, axis=2))
+
+
+def test_mapping_returns_updated_spacing_and_metadata():
+    from medaugmentx.core import Transform
+    from medaugmentx.transforms import Resize
+
+    class UpdateMetadata(Transform):
+        def apply(self, volume):
+            return volume.replace(metadata={"processed": True})
+
+    from medaugmentx import Compose
+    sample = {"image": np.ones((6, 6), dtype=np.float32),
+              "spacing": (2.0, 3.0), "metadata": {"processed": False}}
+    out = SampleTransform(Compose([Resize((3, 3)), UpdateMetadata()]))(sample)
+    assert out["spacing"] == (4.0, 6.0)
+    assert out["metadata"] == {"processed": True}
+    assert sample["metadata"] == {"processed": False}
+    assert sample["spacing"] == (2.0, 3.0)

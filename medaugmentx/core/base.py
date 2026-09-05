@@ -38,7 +38,7 @@ class Transform(ABC):
             raise ValueError(f"p must be in [0, 1], got {p}")
         self.p: float = float(p)
         # Store the seed for serialisation (int or None only; Generator can't round-trip).
-        self._seed: int | None = seed if isinstance(seed, (int, type(None))) else None
+        self._seed: int | None = int(seed) if isinstance(seed, (int, np.integer)) else None
         self.rng: np.random.Generator = resolve_rng(seed)
 
     def __call__(self, volume: MedVolume) -> MedVolume:
@@ -72,10 +72,11 @@ class Transform(ABC):
     def to_dict(self) -> dict[str, Any]:
         """Best-effort dictionary form of this transform's parameters.
 
-        Phase 1 ships only this introspection helper; full YAML serialisation
-        and round-tripping arrive in Phase 2.
+        Subclasses whose stored attributes differ from constructor arguments
+        must override this method to produce reconstructible parameters.
         """
         params = {
             k: v for k, v in self.__dict__.items() if k != "rng" and not k.startswith("_")
         }
+        params["seed"] = self._seed
         return {"name": self.__class__.__name__, "params": params}

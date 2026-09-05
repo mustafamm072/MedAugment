@@ -190,5 +190,6 @@ class RandomAffine(Transform):
                 "mode": self.mode,
                 "cval": self.cval,
                 "p": self.p,
+                "seed": self._seed,
             },
         }

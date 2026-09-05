@@ -101,5 +101,6 @@ class KSpaceDropout(Transform):
                 "dropout_fraction": dr[0] if dr[0] == dr[1] else list(dr),
                 "phase_encode_axis": self.phase_encode_axis,
                 "p": self.p,
+                "seed": self._seed,
             },
         }

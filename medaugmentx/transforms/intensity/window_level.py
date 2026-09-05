@@ -112,5 +112,6 @@ class WindowLevel(Transform):
                 "width_scale": width_scale,
                 "rescale_output": self.rescale_output,
                 "p": self.p,
+                "seed": self._seed,
             },
         }

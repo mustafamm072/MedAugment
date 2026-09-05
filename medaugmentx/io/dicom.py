@@ -75,7 +75,7 @@ def _list_dicom_files(path: str) -> list[str]:
                 files.append(os.path.join(root, name))
     if not files:
         raise FileNotFoundError(f"No DICOM-like files found under {path}")
-    return files
+    return sorted(files)
 
 
 def load_dicom_series(path: str) -> MedVolume:
@@ -101,7 +101,8 @@ def load_dicom_series(path: str) -> MedVolume:
     Raises:
         ImportError: If ``pydicom`` is not installed.
         FileNotFoundError: If the path does not exist or contains no DICOMs.
-        ValueError: If files belong to multiple SeriesInstanceUIDs.
+        ValueError: If files contain color images, multiple SeriesInstanceUIDs,
+            inconsistent geometry, or duplicate/irregular physical slice positions.
     """
     pydicom = _import_pydicom()
     files = _list_dicom_files(path)
@@ -114,6 +115,8 @@ def load_dicom_series(path: str) -> MedVolume:
             continue
         if not hasattr(ds, "PixelData"):
             continue
+        if int(_safe_get(ds, "SamplesPerPixel", 1)) != 1:
+            raise ValueError("Only monochrome DICOM images are supported")
         datasets.append((f, ds))
 
     if not datasets:
@@ -146,22 +149,56 @@ def load_dicom_series(path: str) -> MedVolume:
         metadata = _build_metadata(ds, source=path)
         return MedVolume(image=image, spacing=spacing, metadata=metadata)
 
+    # Choose one ordering basis for the entire series. InstanceNumber is an
+    # ordinal, never a physical distance in millimetres.
+    def has_geometry(ds):
+        return (
+            _safe_get(ds, "ImagePositionPatient") is not None
+            and _safe_get(ds, "ImageOrientationPatient") is not None
+        )
+
+    physical_positions = all(has_geometry(ds) for _, ds in datasets)
+    slice_locations = all(_safe_get(ds, "SliceLocation") is not None for _, ds in datasets)
+    if physical_positions:
+        reference_orientation = np.asarray(datasets[0][1].ImageOrientationPatient, dtype=float)
+        if reference_orientation.shape != (6,) or not np.isfinite(reference_orientation).all():
+            raise ValueError("DICOM orientation must contain six finite values")
+        if not np.isclose(np.linalg.norm(np.cross(reference_orientation[:3],
+                                                  reference_orientation[3:])), 1.0, atol=1e-3):
+            raise ValueError("DICOM orientation must define a unit slice normal")
+        for _, ds in datasets:
+            orientation = np.asarray(ds.ImageOrientationPatient, dtype=float)
+            position = np.asarray(ds.ImagePositionPatient, dtype=float)
+            if (orientation.shape != (6,) or position.shape != (3,)
+                    or not np.isfinite(position).all()
+                    or not np.allclose(orientation, reference_orientation, atol=1e-5)):
+                raise ValueError("DICOM slices have inconsistent orientation or invalid positions")
+    reference_spacing = np.asarray(_safe_get(datasets[0][1], "PixelSpacing", [1.0, 1.0]), dtype=float)
+    for _, ds in datasets:
+        pixel_spacing = np.asarray(_safe_get(ds, "PixelSpacing", [1.0, 1.0]), dtype=float)
+        if (pixel_spacing.shape != (2,) or not np.isfinite(pixel_spacing).all()
+                or (pixel_spacing <= 0).any()
+                or not np.allclose(pixel_spacing, reference_spacing)):
+            raise ValueError("DICOM slices have invalid or inconsistent PixelSpacing")
     # Multi-file series: sort by slice position.
     sortable = []
     for f, ds in datasets:
-        pos = _slice_position(ds)
+        if physical_positions:
+            pos = _slice_position(ds)
+        elif slice_locations:
+            pos = float(ds.SliceLocation)
+        else:
+            pos = float(_safe_get(ds, "InstanceNumber", 0))
         sortable.append((pos if pos is not None else 0.0, f, ds))
     sortable.sort(key=lambda t: t[0])
 
     ref_ds = sortable[0][2]
-    slope = float(_safe_get(ref_ds, "RescaleSlope", 1.0))
-    intercept = float(_safe_get(ref_ds, "RescaleIntercept", 0.0))
 
     slices: list[np.ndarray] = []
     positions: list[float] = []
     for pos, _, ds in sortable:
-        s = ds.pixel_array.astype(np.float32) * float(_safe_get(ds, "RescaleSlope", slope))
-        s = s + float(_safe_get(ds, "RescaleIntercept", intercept))
+        s = ds.pixel_array.astype(np.float32) * float(_safe_get(ds, "RescaleSlope", 1.0))
+        s = s + float(_safe_get(ds, "RescaleIntercept", 0.0))
         if s.ndim != 2:
             raise ValueError(f"Expected 2D slices, got shape {s.shape}")
         slices.append(s)
@@ -172,13 +209,19 @@ def load_dicom_series(path: str) -> MedVolume:
     ps = _safe_get(ref_ds, "PixelSpacing", [1.0, 1.0])
     in_plane = (float(ps[0]), float(ps[1]))
 
-    if len(positions) >= 2:
+    if physical_positions or slice_locations:
         diffs = np.diff(positions)
-        z_spacing = float(np.median(np.abs(diffs))) or float(
-            _safe_get(ref_ds, "SliceThickness", 1.0)
-        )
+        if not np.isfinite(diffs).all() or (diffs <= 0).any():
+            raise ValueError("DICOM slice positions must be finite and distinct")
+        z_spacing = float(np.median(diffs))
+        if not np.allclose(diffs, z_spacing, rtol=1e-3, atol=1e-3):
+            raise ValueError("DICOM slice spacing is irregular; resample to a regular grid first")
     else:
-        z_spacing = float(_safe_get(ref_ds, "SliceThickness", 1.0))
+        z_spacing = abs(float(_safe_get(
+            ref_ds, "SpacingBetweenSlices", _safe_get(ref_ds, "SliceThickness", 1.0)
+        )))
+    if not np.isfinite(z_spacing) or z_spacing <= 0:
+        raise ValueError("DICOM slice spacing must be finite and positive")
 
     metadata = _build_metadata(ref_ds, source=path)
     metadata["num_slices"] = len(slices)

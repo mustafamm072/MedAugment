@@ -78,5 +78,6 @@ class SliceDropout(Transform):
                 "cval": self.cval,
                 "affect_mask": self.affect_mask,
                 "p": self.p,
+                "seed": self._seed,
             },
         }

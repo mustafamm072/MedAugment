@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If you use MedAugmentX in research, cite this software and record the version or commit used."
+type: software
+title: MedAugmentX
+authors:
+  - name: MedAugmentX Contributors
+repository-code: "https://github.com/mustafamm072/MedAugmentX"
+url: "https://github.com/mustafamm072/MedAugmentX"
+license: MIT
+keywords:
+  - medical imaging
+  - data augmentation
+  - reproducible research

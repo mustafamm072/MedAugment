@@ -103,5 +103,6 @@ class BiasField(Transform):
                 ),
                 "order": self.order,
                 "p": self.p,
+                "seed": self._seed,
             },
         }

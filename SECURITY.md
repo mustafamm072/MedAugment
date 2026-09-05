@@ -56,3 +56,15 @@ production use.
 MedAugmentX is not a diagnostic device or clinical decision-support system.
 Security, privacy, clinical validation, and regulatory obligations for products
 built with MedAugmentX remain the responsibility of the adopting organization.
+
+## Pipeline configuration boundary
+
+JSON/YAML loading reconstructs only registered transform classes; it never
+imports a class named by a document. YAML uses the safe loader. Public text
+loaders accept at most 1,000,000 characters; pipeline reconstruction accepts at
+most 64 nesting levels and 10,000 transforms. Malformed structures are rejected.
+These limits are defensive checks, not a sandbox: registered custom classes run
+Python constructors, and transform parameters can request large allocations.
+Load policies from trusted sources and enforce process resource limits when
+handling external workloads. Histogram reference arrays can embed input data
+in a saved policy; inspect configurations before sharing them.

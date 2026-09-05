@@ -116,5 +116,6 @@ class ReconStreak(Transform):
                 "decay": self.decay,
                 "axis": self.axis,
                 "p": self.p,
+                "seed": self._seed,
             },
         }

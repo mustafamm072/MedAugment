@@ -40,8 +40,6 @@ def _write_dicom_slice(path, pixels: np.ndarray, *, series_uid, position: float,
     ds.SamplesPerPixel = 1
     ds.PhotometricInterpretation = "MONOCHROME2"
     ds.PixelRepresentation = 0
-    ds.is_little_endian = True
-    ds.is_implicit_VR = False
     ds.PixelData = pixels.astype(np.uint16).tobytes()
     ds.save_as(str(path))
 
@@ -76,3 +74,60 @@ def test_multiple_series_rejected(tmp_path):
 def test_missing_directory_raises(tmp_path):
     with pytest.raises(FileNotFoundError):
         load_dicom_series(str(tmp_path / "does-not-exist"))
+
+
+def test_instance_numbers_are_not_physical_spacing(tmp_path):
+    uid = generate_uid()
+    for i in range(2):
+        path = tmp_path / f"{i}.dcm"
+        _write_dicom_slice(path, np.zeros((4, 4)), series_uid=uid, position=i)
+        ds = pydicom.dcmread(path)
+        del ds.ImagePositionPatient
+        del ds.ImageOrientationPatient
+        ds.InstanceNumber = i * 10
+        ds.SpacingBetweenSlices = 2.5
+        ds.save_as(path)
+    assert load_dicom_series(str(tmp_path)).spacing[0] == 2.5
+
+
+def test_missing_rescale_tags_do_not_inherit_other_slice(tmp_path):
+    uid = generate_uid()
+    for i in range(2):
+        path = tmp_path / f"{i}.dcm"
+        _write_dicom_slice(path, np.full((4, 4), 1024), series_uid=uid, position=i)
+        if i == 1:
+            ds = pydicom.dcmread(path)
+            del ds.RescaleIntercept
+            del ds.RescaleSlope
+            ds.save_as(path)
+    volume = load_dicom_series(str(tmp_path))
+    assert volume.image[0, 0, 0] == 0
+    assert volume.image[1, 0, 0] == 1024
+
+
+@pytest.mark.parametrize("positions", [(0, 0, 1), (0, 1, 4)])
+def test_nonregular_slice_positions_rejected(tmp_path, positions):
+    uid = generate_uid()
+    for i, position in enumerate(positions):
+        _write_dicom_slice(tmp_path / f"{i}.dcm", np.zeros((4, 4)),
+                           series_uid=uid, position=position)
+    with pytest.raises(ValueError, match="distinct|irregular"):
+        load_dicom_series(str(tmp_path))
+
+
+@pytest.mark.parametrize("tag,value", [
+    ("ImageOrientationPatient", [0, 1, 0, 1, 0, 0]),
+    ("PixelSpacing", [0.25, 0.5]),
+    ("SamplesPerPixel", 3),
+])
+def test_inconsistent_or_color_dicom_rejected(tmp_path, tag, value):
+    uid = generate_uid()
+    for i in range(2):
+        path = tmp_path / f"{i}.dcm"
+        _write_dicom_slice(path, np.zeros((4, 4)), series_uid=uid, position=i)
+        if i == 1:
+            ds = pydicom.dcmread(path)
+            setattr(ds, tag, value)
+            ds.save_as(path)
+    with pytest.raises(ValueError, match="inconsistent|monochrome"):
+        load_dicom_series(str(tmp_path))

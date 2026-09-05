@@ -113,5 +113,6 @@ class AnatomicCrop(Transform):
                 "foreground_prob": self.foreground_prob,
                 "foreground_threshold": self.foreground_threshold,
                 "p": self.p,
+                "seed": self._seed,
             },
         }

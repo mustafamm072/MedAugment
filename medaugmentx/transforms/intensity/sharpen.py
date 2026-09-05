@@ -70,6 +70,7 @@ class Sharpen(Transform):
                 "sigma": sr[0] if sr[0] == sr[1] else list(sr),
                 "clip": list(self.clip) if self.clip is not None else None,
                 "p": self.p,
+                "seed": self._seed,
             },
         }
 

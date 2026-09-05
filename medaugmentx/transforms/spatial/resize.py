@@ -73,7 +73,13 @@ class Resize(Transform):
         new_spacing = tuple(
             sp * o / t for sp, o, t in zip(volume.spacing, old_shape, self.size)
         )
-        point_map = geometry.scale_map(np.asarray(factors, dtype=np.float64))
+        # scipy zoom aligns the first and last voxel centres. Singleton
+        # axes have no centre-to-centre extent and map to coordinate zero.
+        target_factors = np.asarray([
+            (t - 1) / (s - 1) if s > 1 else 0.0
+            for t, s in zip(self.size, old_shape)
+        ], dtype=np.float64)
+        point_map = geometry.scale_map(target_factors)
         return volume.warp(
             point_map,
             image=new_image.astype(np.float32, copy=False),
@@ -84,7 +90,7 @@ class Resize(Transform):
     def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.__class__.__name__,
-            "params": {"size": list(self.size), "order": self.order, "p": self.p},
+            "params": {"size": list(self.size), "order": self.order, "p": self.p, "seed": self._seed},
         }
 
 
@@ -160,6 +166,7 @@ class Pad(Transform):
                 "mode": self.mode,
                 "cval": self.cval,
                 "p": self.p,
+                "seed": self._seed,
             },
         }
 
@@ -208,7 +215,7 @@ class CenterCrop(Transform):
     def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.__class__.__name__,
-            "params": {"size": list(self.size), "p": self.p},
+            "params": {"size": list(self.size), "p": self.p, "seed": self._seed},
         }
 
 

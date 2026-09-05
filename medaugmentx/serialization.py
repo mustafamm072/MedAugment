@@ -262,26 +262,41 @@ def from_dict(d: dict[str, Any]) -> Transform:
     Raises:
         KeyError: If the transform name is not in :data:`REGISTRY`.
     """
-    name: str = d["name"]
-    if name not in REGISTRY:
-        raise KeyError(
-            f"Transform {name!r} is not in the serialisation registry.  "
-            f"Register it via ``medaugmentx.serialization.REGISTRY[{name!r}] = MyClass``."
-        )
-    params: dict[str, Any] = dict(d.get("params", {}))
+    from medaugmentx.core.base import Transform
 
-    # Containers carry nested child dicts — reconstruct them first.
-    if name in ("Compose", "OneOf", "SomeOf"):
-        child_dicts = params.pop("transforms", [])
-        params["transforms"] = [from_dict(c) for c in child_dicts]
+    nodes = 0
 
-    # Guard wraps a single transform; its validator stays as a plain dict and
-    # is rebuilt by Guard.__init__.
-    if name == "Guard" and "transform" in params:
-        params["transform"] = from_dict(params["transform"])
+    def build(node: Any, depth: int = 0) -> Transform:
+        nonlocal nodes
+        nodes += 1
+        if depth > 64 or nodes > 10000:
+            raise ValueError("Pipeline exceeds the limit of 64 nesting levels or 10000 transforms")
+        if not isinstance(node, dict):
+            raise ValueError("Each transform must be an object with name and params fields")
+        if set(node) - {"name", "params"}:
+            raise ValueError("Unknown transform fields; expected only name and params")
+        name = node.get("name")
+        if not isinstance(name, str) or not name:
+            raise ValueError("Transform name must be a non-empty string")
+        if name not in REGISTRY:
+            raise KeyError(f"Transform {name!r} is not in the serialisation registry.")
+        raw_params = node.get("params", {})
+        if not isinstance(raw_params, dict) or not all(isinstance(k, str) for k in raw_params):
+            raise ValueError("Transform params must be an object with string keys")
+        params = dict(raw_params)
+        if name in ("Compose", "OneOf", "SomeOf"):
+            children = params.get("transforms", [])
+            if not isinstance(children, (list, tuple)):
+                raise ValueError("Container transforms must be a list")
+            params["transforms"] = [build(child, depth + 1) for child in children]
+        if name == "Guard" and "transform" in params:
+            params["transform"] = build(params["transform"], depth + 1)
+        cls = REGISTRY[name]
+        if not isinstance(cls, type) or not issubclass(cls, Transform):
+            raise TypeError(f"Registry entry {name!r} must be a Transform subclass")
+        return cls(**params)
 
-    cls = REGISTRY[name]
-    return cls(**params)
+    return build(d)
 
 
 # ---------------------------------------------------------------------------
@@ -293,6 +308,8 @@ def _make_serialisable(obj: Any) -> Any:
     """Recursively convert numpy/tuple types to JSON-native equivalents."""
     import numpy as np
 
+    if isinstance(obj, np.bool_):
+        return bool(obj)
     if isinstance(obj, np.integer):
         return int(obj)
     if isinstance(obj, np.floating):
@@ -308,6 +325,17 @@ def _make_serialisable(obj: Any) -> Any:
     return obj
 
 
+def _check_document_size(s: str) -> None:
+    if not isinstance(s, str):
+        raise TypeError("Pipeline document must be a string")
+    if len(s) > 1_000_000:
+        raise ValueError("Pipeline document exceeds 1000000 characters")
+
+
+def _reject_json_constant(value: str) -> Any:
+    raise ValueError(f"Non-finite JSON constant {value!r} is not supported")
+
+
 def to_json(transform: Transform, indent: int = 2) -> str:
     """Serialise a transform (or pipeline) to a JSON string.
 
@@ -320,7 +348,7 @@ def to_json(transform: Transform, indent: int = 2) -> str:
         A JSON string that can be saved to disk and passed to
         :func:`from_json` to reconstruct the pipeline.
     """
-    return json.dumps(_make_serialisable(transform.to_dict()), indent=indent)
+    return json.dumps(_make_serialisable(transform.to_dict()), indent=indent, allow_nan=False)
 
 
 def from_json(s: str) -> Transform:
@@ -332,7 +360,12 @@ def from_json(s: str) -> Transform:
     Returns:
         The reconstructed :class:`~medaugmentx.core.base.Transform`.
     """
-    return from_dict(json.loads(s))
+    _check_document_size(s)
+    try:
+        parsed = json.loads(s, parse_constant=_reject_json_constant)
+    except RecursionError as exc:
+        raise ValueError("Pipeline document is nested too deeply") from exc
+    return from_dict(parsed)
 
 
 # ---------------------------------------------------------------------------
@@ -358,7 +391,7 @@ def to_yaml(transform: Transform) -> str:
         import yaml
     except ImportError as exc:
         raise ImportError("YAML serialisation requires PyYAML: pip install pyyaml") from exc
-    return yaml.dump(
+    return yaml.safe_dump(
         _make_serialisable(transform.to_dict()),
         default_flow_style=False,
         allow_unicode=True,
@@ -384,7 +417,12 @@ def from_yaml(s: str) -> Transform:
         import yaml
     except ImportError as exc:
         raise ImportError("YAML deserialisation requires PyYAML: pip install pyyaml") from exc
-    return from_dict(yaml.safe_load(s))
+    _check_document_size(s)
+    try:
+        parsed = yaml.safe_load(s)
+    except RecursionError as exc:
+        raise ValueError("Pipeline document is nested too deeply") from exc
+    return from_dict(parsed)
 
 
 __all__ = [

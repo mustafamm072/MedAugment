@@ -107,5 +107,6 @@ class HistogramMatch(Transform):
                 "blend": br[0] if br[0] == br[1] else list(br),
                 "n_quantiles": self.n_quantiles,
                 "p": self.p,
+                "seed": self._seed,
             },
         }

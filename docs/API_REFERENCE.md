@@ -87,11 +87,14 @@ transform maps targets in lockstep with the image:
 | `ElasticDeform` | Sample the displacement field at each point |
 | `AnatomicCrop`, `CenterCrop` | Shift by the crop origin (may go negative) |
 | `Pad` | Shift by the pad width |
-| `Resize` | Scale by the per-axis zoom factor |
+| `Resize` | Align voxel centres using `(new_size - 1) / (old_size - 1)`; singleton axes map to zero |
+| `SlabShift` | Translate along the slice axis |
+| `CompressionVariation` | Scale about the volume centre on the compression axis |
 | `CoarseDropout`, intensity/artifact transforms | Unchanged (pass through) |
 
 Boxes are mapped via their `2**ndim` corners and re-bounded to an axis-aligned
-box, so they remain valid under rotation. Transforms map targets faithfully and
+box, so they remain valid under rotation. For non-linear displacement fields,
+this is an approximation and may not enclose every warped interior point. Transforms map targets faithfully and
 never drop them — after a crop, call `remove_out_of_bounds_targets()` to prune
 targets that left the frame.
 
@@ -163,7 +166,7 @@ Guard(
     transform,
     validator=None,                # VolumeValidator | dict | None (defaults)
     on_fail="raise",               # "raise" | "warn" | "revert" | "retry"
-    retries=1,                     # re-draws in "retry" mode
+    retries=1,                     # total attempts in "retry" mode
     p=1.0,
     seed=None,
 ) -> Transform
@@ -282,6 +285,12 @@ from medaugmentx.serialization import REGISTRY, from_dict, to_json, from_json, t
 | `from_json(s)` | Reconstruct from JSON |
 | `to_yaml(transform)` | Serialise to YAML; requires `pyyaml` |
 | `from_yaml(s)` | Reconstruct from YAML; requires `pyyaml` |
+
+Text loaders accept up to 1,000,000 characters. Reconstruction rejects malformed
+structures, more than 64 nesting levels, or more than 10,000 transforms. Only
+registered Transform subclasses are constructed; custom registrations are
+trusted Python code. Saved integer seeds restart the original draw sequence,
+not the current RNG state. See [Security](../SECURITY.md).
 
 Custom transform classes can be registered with the `@register_transform`
 decorator (which validates the class and guards against name collisions) or by

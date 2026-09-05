@@ -312,3 +312,62 @@ def test_register_transform_override_replaces_entry(clean_registry):
     register_transform(first)
     register_transform(name="_Dup", override=True)(second)
     assert REGISTRY["_Dup"] is second
+
+
+@pytest.mark.parametrize("name,cls", list(REGISTRY.items()))
+def test_every_builtin_preserves_seed_and_draw_sequence(name, cls):
+    args = {"seed": np.int64(17), "p": 0.7}
+    if name in ("Compose", "OneOf", "SomeOf"):
+        args["transforms"] = [GaussianNoise()]
+    elif name == "Guard":
+        args["transform"] = GaussianNoise()
+    elif name in ("Resize", "Pad", "CenterCrop", "AnatomicCrop"):
+        args["size"] = (4, 8, 8)
+    original = cls(**args)
+    restored = from_dict(original.to_dict())
+    via_json = round_trip(original)
+    volume = MedVolume(np.random.default_rng(0).random((4, 8, 8)).astype(np.float32))
+    assert restored.to_dict()["params"]["seed"] == 17
+    for _ in range(3):
+        expected = original(volume).image
+        np.testing.assert_array_equal(restored(volume).image, expected)
+        np.testing.assert_array_equal(via_json(volume).image, expected)
+
+
+@pytest.mark.parametrize("document", [None, [], {"name": []}, {"name": "Compose", "params": []},
+                                      {"name": "Compose", "params": {"transforms": "bad"}},
+                                      {"name": "Compose", "typo": 1}])
+def test_invalid_schema_has_clear_error(document):
+    with pytest.raises(ValueError):
+        from_dict(document)
+
+
+def test_recursive_config_is_bounded():
+    node = {"name": "Compose", "params": {"transforms": []}}
+    node["params"]["transforms"].append(node)
+    with pytest.raises(ValueError, match="nesting"):
+        from_dict(node)
+
+
+def test_json_size_and_nonfinite_constants_rejected():
+    with pytest.raises(ValueError, match="characters"):
+        from_json(" " * 1_000_001)
+    with pytest.raises(ValueError, match="Non-finite"):
+        from_json('{"name":"GaussianNoise","params":{"std":NaN}}')
+
+
+def test_yaml_round_trip_and_recursive_alias():
+    pytest.importorskip("yaml")
+    from medaugmentx.serialization import from_yaml, to_yaml
+
+    t = GaussianNoise(seed=7)
+    rt = from_yaml(to_yaml(t))
+    assert rt.to_dict() == t.to_dict()
+    with pytest.raises(ValueError, match="nesting"):
+        from_yaml('&a {name: Compose, params: {transforms: [*a]}}')
+
+
+def test_invalid_direct_registry_assignment_rejected(clean_registry):
+    REGISTRY["invalid"] = dict
+    with pytest.raises(TypeError, match="Transform subclass"):
+        from_dict({"name": "invalid"})

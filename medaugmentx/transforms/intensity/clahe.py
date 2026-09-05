@@ -147,5 +147,6 @@ class CLAHEContrast(Transform):
                 "grid": list(self.grid),
                 "n_bins": self.n_bins,
                 "p": self.p,
+                "seed": self._seed,
             },
         }

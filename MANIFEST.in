@@ -3,7 +3,10 @@ include CHANGELOG.md
 include CONTRIBUTING.md
 include LICENSE
 include SECURITY.md
-recursive-include docs *.md
+include CITATION.cff
+recursive-include docs *.md *.rst *.py
+recursive-include docs/assets *.png *.json
 recursive-include examples *.md *.py
+recursive-include benchmarks *.md *.py
 recursive-include tests *.py
 global-exclude __pycache__ *.py[cod] .DS_Store

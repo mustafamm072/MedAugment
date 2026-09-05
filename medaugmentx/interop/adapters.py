@@ -173,7 +173,7 @@ class SampleTransform:
             return self._call_mapping(sample)
         if isinstance(sample, tuple) or isinstance(sample, list):
             return self._call_sequence(sample)
-        image, _ = self._augment(image=sample, mask=None)
+        image, _, _ = self._augment(image=sample, mask=None)
         return image
 
     def _augment(
@@ -183,7 +183,7 @@ class SampleTransform:
         mask: Any | None,
         spacing: tuple[float, ...] | None = None,
         metadata: Mapping[str, Any] | None = None,
-    ) -> tuple[Any, Any | None]:
+    ) -> tuple[Any, Any | None, MedVolume]:
         image_array, image_spec = _to_volume_array(
             image,
             channel_dim=self.channel_dim,
@@ -209,7 +209,7 @@ class SampleTransform:
         out_mask = None
         if mask_spec is not None and augmented.mask is not None:
             out_mask = _restore_array(augmented.mask, mask_spec)
-        return out_image, out_mask
+        return out_image, out_mask, augmented
 
     def _call_mapping(self, sample: Mapping[str, Any]) -> Mapping[str, Any]:
         if self.image_key not in sample:
@@ -218,7 +218,7 @@ class SampleTransform:
         mask_present = mask_key is not None and mask_key in sample
         spacing = self._get_optional_tuple(sample, self.spacing_key)
         metadata = self._get_optional_mapping(sample, self.metadata_key)
-        image, mask = self._augment(
+        image, mask, augmented = self._augment(
             image=sample[self.image_key],
             mask=sample[mask_key] if mask_present and mask_key is not None else None,
             spacing=spacing,
@@ -226,6 +226,10 @@ class SampleTransform:
         )
         out = dict(sample)
         out[self.image_key] = image
+        if self.spacing_key is not None and self.spacing_key in sample:
+            out[self.spacing_key] = augmented.spacing
+        if self.metadata_key is not None and self.metadata_key in sample:
+            out[self.metadata_key] = augmented.metadata
         if mask_present and mask_key is not None:
             out[mask_key] = mask
         return out
@@ -233,7 +237,7 @@ class SampleTransform:
     def _call_sequence(self, sample: tuple[Any, ...] | list[Any]) -> tuple[Any, Any] | list[Any]:
         if len(sample) != 2:
             raise ValueError("Sequence samples must be (image, mask)")
-        image, mask = self._augment(image=sample[0], mask=sample[1])
+        image, mask, _ = self._augment(image=sample[0], mask=sample[1])
         if isinstance(sample, list):
             return [image, mask]
         return image, mask
@@ -416,7 +420,7 @@ class TorchIOTransform(SampleTransform):
     def __call__(self, sample: Any) -> Any:
         if _looks_like_torchio_image(sample):
             image = _copy_if_possible(sample) if self.copy else sample
-            out_image, _ = self._augment(
+            out_image, _, _ = self._augment(
                 image=image.data,
                 mask=None,
                 spacing=self._spacing_from_image(image),
@@ -443,7 +447,7 @@ class TorchIOTransform(SampleTransform):
                 label_obj = _copy_if_possible(label_obj)
                 _subject_set(out, label_key, label_obj)
 
-        out_image, out_label = self._augment(
+        out_image, out_label, _ = self._augment(
             image=image_obj.data,
             mask=None if label_obj is None else label_obj.data,
             spacing=self._spacing_from_image(image_obj, fallback_subject=out),

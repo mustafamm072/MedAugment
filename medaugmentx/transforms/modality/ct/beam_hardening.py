@@ -104,5 +104,6 @@ class BeamHardening(Transform):
                 "alpha": ar[0] if ar[0] == ar[1] else list(ar),
                 "power": self.power,
                 "p": self.p,
+                "seed": self._seed,
             },
         }

@@ -91,6 +91,7 @@ class MRIMotion(Transform):
                 "translation": (-tr[0]) if tr[0] == -tr[1] else list(tr),
                 "num_movements": nr[0] if nr[0] == nr[1] else list(nr),
                 "p": self.p,
+                "seed": self._seed,
             },
         }
 

@@ -75,5 +75,6 @@ class RandomFlip(Transform):
                 "axes": list(self.axes_spec),
                 "p_per_axis": self.p_per_axis,
                 "p": self.p,
+                "seed": self._seed,
             },
         }

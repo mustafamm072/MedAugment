@@ -74,6 +74,7 @@ class GaussianNoise(Transform):
                 "relative": self.relative,
                 "clip": list(self.clip) if self.clip is not None else None,
                 "p": self.p,
+                "seed": self._seed,
             },
         }
 
@@ -126,5 +127,6 @@ class RicianNoise(Transform):
                 "std": std,
                 "clip": list(self.clip) if self.clip is not None else None,
                 "p": self.p,
+                "seed": self._seed,
             },
         }

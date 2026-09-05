@@ -93,3 +93,16 @@ class TestSomeOf:
         out = SomeOf([AddConstant(1.0), AddConstant(2.0)], n=(0, 2), seed=0)(vol)
         # value is sum of a subset of {1, 2}
         assert float(out.image[0, 0]) in {0.0, 1.0, 2.0, 3.0}
+
+
+@pytest.mark.parametrize("weights", [[float("nan"), 1], [float("inf"), 1], [0, 0]])
+def test_oneof_rejects_invalid_weights(weights):
+    from medaugmentx.transforms import GaussianNoise
+    with pytest.raises(ValueError, match="weights"):
+        OneOf([GaussianNoise(), GaussianNoise()], weights=weights)
+
+
+def test_oneof_normalizes_large_finite_weights():
+    from medaugmentx.transforms import GaussianNoise
+    t = OneOf([GaussianNoise(), GaussianNoise()], weights=[1e308, 1e308])
+    np.testing.assert_array_equal(t.weights, [0.5, 0.5])

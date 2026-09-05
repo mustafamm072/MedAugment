@@ -87,5 +87,6 @@ class BrightnessContrast(Transform):
                 "contrast": list(self.contrast_range),
                 "clip": list(self.clip) if self.clip is not None else None,
                 "p": self.p,
+                "seed": self._seed,
             },
         }

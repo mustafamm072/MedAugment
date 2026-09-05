@@ -249,3 +249,28 @@ def test_guard_in_compose_round_trip():
     restored = from_json(to_json(pipeline))
     assert isinstance(restored, Compose)
     assert isinstance(restored.transforms[0], Guard)
+
+
+class MutateInput(Transform):
+    def apply(self, volume):
+        volume.image[:] = np.nan
+        volume.mask[:] = 0
+        volume.metadata["nested"]["values"].append("modified")
+        return volume
+
+
+def test_guard_isolates_in_place_mutation_on_every_attempt(vol3d):
+    vol3d.metadata["nested"] = {"values": []}
+    original = vol3d.copy()
+    with pytest.warns(UserWarning, match="attempts"):
+        result = Guard(MutateInput(), on_fail="retry", retries=2)(vol3d)
+    np.testing.assert_array_equal(result.image, original.image)
+    np.testing.assert_array_equal(result.mask, original.mask)
+    assert result.metadata == original.metadata
+
+
+def test_dropped_mask_is_validation_failure(vol3d):
+    candidate = vol3d.copy()
+    candidate.mask = None
+    report = VolumeValidator(max_foreground_loss=0.5).validate(candidate, vol3d)
+    assert {issue.check for issue in report.errors} == {"mask_labels", "foreground_loss"}

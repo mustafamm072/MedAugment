@@ -1,5 +1,30 @@
 # Changelog
 
+
+## Unreleased
+
+### Fixed
+
+- Preserve integer seeds in every built-in transform configuration, including standalone JSON/YAML round-trips.
+- Align resize landmarks/boxes with the sampled voxel-centre grid; move targets through DBT slab shifts and compression.
+- Isolate each Guard attempt from input mutation, deep-copy nested metadata, and detect removed masks. Clarify that retries counts total attempts.
+- Return updated spacing/metadata from dictionary adapters.
+- Use physical DICOM spacing rather than instance-number differences; reject duplicate/irregular positions and color images, and apply per-slice rescale defaults.
+- Reject malformed/deep/oversized pipeline configurations and invalid registry entries; reject non-finite JSON constants and invalid selection weights.
+
+### Added
+
+- README before/after gallery for MRI, CT, X-ray, and DBT, generated from synthetic phantoms with a reproducible script and parameter manifest.
+
+- Searchable Sphinx documentation from the existing Markdown guides, with CI preview artifacts.
+- Research reproducibility guide, software citation metadata, and a runnable synthetic experiment record.
+- Distribution build/metadata checks and tests against an installed wheel outside the checkout.
+- CI execution of adoption examples and 2D/3D benchmark smoke checks; repaired benchmark shape handling and stale Guard registration handling.
+
+### Compatibility notes
+
+Saved policies now include leaf seeds. Loading a saved integer-seeded standalone transform starts its sequence again; it does not restore current RNG state. Resize target coordinates change to match existing image interpolation. Guard now copies inputs for isolation, increasing peak memory. DICOM series with irregular or duplicate physical slice positions now fail explicitly. Text policies above 1,000,000 characters require reduction or trusted in-process construction. No release or public deployment is performed by these changes.
+
 All notable changes to MedAugmentX will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),

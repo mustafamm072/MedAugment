@@ -65,6 +65,7 @@ class ScatterSimulation(Transform):
                 "fraction": fr[0] if fr[0] == fr[1] else list(fr),
                 "sigma": sr[0] if sr[0] == sr[1] else list(sr),
                 "p": self.p,
+                "seed": self._seed,
             },
         }
 

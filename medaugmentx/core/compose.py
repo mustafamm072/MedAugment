@@ -15,8 +15,9 @@ class Compose(Transform):
     """Apply transforms sequentially.
 
     All children share a deterministic seeding chain derived from the
-    top-level seed, so ``Compose([...], seed=42)`` produces the same output
-    every time, on every machine, for the same NumPy version.
+    top-level seed. Fresh equivalent pipelines reproduce the same sequence
+    of draws in the same software environment; successive calls advance RNG
+    state. Serialisation stores configuration, not the current RNG state.
     """
 
     def __init__(
@@ -95,8 +96,9 @@ class OneOf(Transform):
             w = np.asarray(weights, dtype=np.float64)
             if w.shape != (len(self.transforms),):
                 raise ValueError("weights length must match number of transforms")
-            if (w < 0).any() or w.sum() <= 0:
-                raise ValueError("weights must be non-negative and sum to > 0")
+            if not np.isfinite(w).all() or (w < 0).any() or not (w > 0).any():
+                raise ValueError("weights must be finite, non-negative and sum to > 0")
+            w = w / w.max()
             self.weights = w / w.sum()
 
         self._reseed_children()

@@ -77,6 +77,7 @@ class GaussianBlur(Transform):
                 "order": self.order,
                 "mode": self.mode,
                 "p": self.p,
+                "seed": self._seed,
             },
         }
 
@@ -162,6 +163,7 @@ class SimulateLowResolution(Transform):
                 "order_up": self.order_up,
                 "per_axis": self.per_axis,
                 "p": self.p,
+                "seed": self._seed,
             },
         }
 
@@ -227,5 +229,6 @@ class MedianBlur(Transform):
                 "ksize": kr[0] if kr[0] == kr[1] else list(kr),
                 "mode": self.mode,
                 "p": self.p,
+                "seed": self._seed,
             },
         }

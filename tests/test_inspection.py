@@ -53,10 +53,10 @@ def test_pipeline_summary_formats_nested_pipeline():
 
     assert summary.splitlines() == [
         "Compose(p=1.0, seed=42)",
-        "  0 RandomFlip(axes=['x'], p_per_axis=0.5, p=0.5)",
+        "  0 RandomFlip(axes=['x'], p_per_axis=0.5, p=0.5, seed=None)",
         "  1 OneOf(weights=[0.5, 0.5], p=0.3, seed=None)",
-        "    1.0 GaussianNoise(std=0.01, relative=False, clip=None, p=1.0)",
-        "    1.1 RicianNoise(std=0.02, clip=None, p=1.0)",
+        "    1.0 GaussianNoise(std=0.01, relative=False, clip=None, p=1.0, seed=None)",
+        "    1.1 RicianNoise(std=0.02, clip=None, p=1.0, seed=None)",
     ]
 
 

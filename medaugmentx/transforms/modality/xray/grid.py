@@ -79,6 +79,7 @@ class GridArtifact(Transform):
                 "frequency": fr[0] if fr[0] == fr[1] else list(fr),
                 "axis": self.axis,
                 "p": self.p,
+                "seed": self._seed,
             },
         }
 

@@ -112,8 +112,9 @@ base class handles:
 
 - **`Compose`** runs children sequentially. The top-level seed is *spawned*
   into one independent generator per child via `derive_rng`, so a given seed
-  produces bit-identical output every time. Adding or removing transforms
-  does not change the seed assignments of the unchanged children.
+  reproduces a sequence of outputs in an equivalent software environment.
+  Calls advance the state; inserting or reordering children can change their
+  assigned streams.
 - **`OneOf`** picks exactly one child, optionally weighted, and forces it to
   run regardless of the child's own `p`.
 - **`SomeOf`** picks `n` (or a range) children without replacement and
