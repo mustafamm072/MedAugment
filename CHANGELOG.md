@@ -18,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `notebooks` optional extra (`matplotlib`, `nbformat`, `nbclient`, `ipykernel`)
   and `notebooks/run_notebooks.py`, which CI runs on every push so the tutorials
   cannot rot.
+- `.github/workflows/docs.yml` publishes the Sphinx site to GitHub Pages on
+  push to `main`, completing roadmap 3.13. Requires Pages to be enabled with
+  the "GitHub Actions" source before the deploy step can succeed.
+
+### Fixed
+
+- The documentation site root no longer 404s. Sphinx writes its root document
+  to `docs/sphinx/index.html` because the source directory is the repository
+  root; `docs/sphinx/_extra/` now supplies a redirect (and `.nojekyll`) at the
+  output root, and CI fails the docs build if it goes missing.
 
 ### Changed
 

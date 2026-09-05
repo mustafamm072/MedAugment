@@ -1,0 +1,60 @@
+name: Docs
+
+# Publishes the Sphinx site to GitHub Pages. CI builds the same site on every
+# push and pull request with -W to catch warnings early; this workflow is only
+# about deploying what lands on main.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Scoped to this workflow: deploy-pages needs an OIDC token to authenticate.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time. Do not cancel a running deploy — a half-finished
+# publish would leave the live site inconsistent.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Build searchable documentation
+        run: |
+          python -m pip install ".[docs]"
+          python -m sphinx -W --keep-going -b html -c docs/sphinx . "${RUNNER_TEMP}/site"
+
+      - name: Check the site root resolves
+        # Sphinx treats the repository root as the source directory, so the root
+        # document is written to docs/sphinx/index.html. docs/sphinx/_extra/
+        # supplies the redirect that makes the site root work; if that ever
+        # stops being copied, fail here rather than publishing a 404.
+        run: test -f "${RUNNER_TEMP}/site/index.html"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ runner.temp }}/site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
