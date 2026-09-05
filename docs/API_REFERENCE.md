@@ -1,6 +1,6 @@
 # API Reference
 
-Version: `0.9.0`
+Version: `0.10.0`
 
 This page documents the supported public imports. Prefer these paths in
 applications, papers, tutorials, and commercial code; internal module paths may

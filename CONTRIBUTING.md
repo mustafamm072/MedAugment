@@ -186,18 +186,33 @@ outside the source checkout, so editable imports cannot hide packaging errors.
 
 ## Releasing
 
-The version number is recorded in four places and they must agree:
+The version number is recorded in six places and they must agree:
 
 | File | Field |
 | --- | --- |
 | `pyproject.toml` | `project.version` |
 | `medaugmentx/__init__.py` | `__version__` |
 | `CITATION.cff` | `version`, `date-released` |
+| `docs/API_REFERENCE.md` | the `Version:` line |
+| `README.md` | the `print(medaugmentx.__version__)` comment |
 | `CHANGELOG.md` | the new `## [x.y.z] — YYYY-MM-DD` heading |
 
-Move the `## [Unreleased]` entries under the new heading, leave `[Unreleased]`
-empty at the top, and update the README's "current version" mention and the
-Phase-3 status row if the release changes them.
+Move the `## [Unreleased]` entries under the new heading and leave
+`[Unreleased]` empty at the top. Also update the README's Phase-3 status row
+and any `docs/MILESTONES.md` deliverable the release completes.
+
+Then tag an annotated tag and publish a GitHub release:
+
+```bash
+git tag -a vX.Y.Z -m "MedAugmentX X.Y.Z — <short summary>"
+git push origin main && git push origin vX.Y.Z
+gh release create vX.Y.Z --title "vX.Y.Z — <Summary>" --notes-file <notes>
+```
+
+Release notes follow the shape of the previous entries: a `## MedAugmentX
+X.Y.Z — <Title>` heading, a short intro, `### Highlights` with bold-lead
+bullets, per-area sections, compatibility notes, then install and
+full-changelog compare links.
 
 Note that CI's oldest matrix entry (Python 3.9) resolves `pydicom` 2.x, the
 last series that supports it. Test fixtures and I/O code must work on both

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.10.0] — 2026-09-05
+
 ### Fixed
 
 - Keep the copied test tree named `tests` in the isolated-wheel CI job; `medaugmentx-tests` is not an importable package name, so pytest could not collect it.

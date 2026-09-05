@@ -113,7 +113,7 @@ Verify the installation:
 
 ```python
 import medaugmentx
-print(medaugmentx.__version__)   # 0.9.0
+print(medaugmentx.__version__)   # 0.10.0
 ```
 
 ---
@@ -523,7 +523,7 @@ experiment records, evaluation reporting, and citation.
 | --- | --- |
 | **1 — Core MVP** | ✅ Core data model, spatial/intensity transforms, DBT, DICOM/NIfTI I/O |
 | **2 — Modality artifacts & serialisation** | ✅ MRI (bias field, ghosting, k-space), CT (beam hardening), presets, JSON/YAML |
-| **3 — Framework interop, GPU backend, v1.0** | In progress: `0.9.0` adds keypoint & bounding-box targets warped through all spatial transforms; `0.8.0` added plausibility validation and safe-augmentation guards; `0.7.0` added pipeline inspection for experiment logs and policy review; `0.6.0` added 14 transforms and a new X-ray modality module; `0.5.0` added custom-transform registration; `0.4.0` shipped TorchIO interop |
+| **3 — Framework interop, GPU backend, v1.0** | In progress: `0.10.0` adds a searchable documentation site, reproducibility and citation metadata, packaging checks, and a round of correctness fixes; `0.9.0` added keypoint & bounding-box targets warped through all spatial transforms; `0.8.0` added plausibility validation and safe-augmentation guards; `0.7.0` added pipeline inspection for experiment logs and policy review; `0.6.0` added 14 transforms and a new X-ray modality module; `0.5.0` added custom-transform registration; `0.4.0` shipped TorchIO interop |
 
 Detailed deliverables: [docs/MILESTONES.md](docs/MILESTONES.md).
 Developer API: [docs/API_REFERENCE.md](docs/API_REFERENCE.md).
